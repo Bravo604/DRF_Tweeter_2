@@ -8,7 +8,7 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from .serializers import TweetSerializer, CommentSerializer
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 
-from .models import Tweet, Comment, LikeTweet, LikeComment, DislikeTweet, DislikeComment
+from .models import Tweet, Comment, LikeTweet, LikeComment, DislikeTweet, DislikeComment, LikeDislikeTweet, TweetStatus
 from .permissions import IsAuthorPermission
 from .paginations import StandardPagination
 
@@ -69,41 +69,44 @@ class CommentRetrieveDestroyUpdateAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class PostTweetLike(APIView):
-    def get(self, request, tweet_id):
+    def get(self, request, tweet_id, status_slug):
         tweet = get_object_or_404(Tweet, id=tweet_id)
+        tweet_status = get_object_or_404(TweetStatus, slug=status_slug)
         try:
-            like = LikeTweet.objects.create(tweet=tweet, user=request.user)
-
+            like_dislike = LikeDislikeTweet.objects.create(tweet=tweet, user=request.user)
         except IntegrityError:
-            LikeTweet.objects.get(tweet=tweet, user=request.user).delete()
+            like_dislike = LikeDislikeTweet.objects.get(tweet=tweet, user=request.user)
+            like_dislike.status=tweet_status
+            like_dislike.save()
             data = {
-                'message': f'{request.user.username} take back his like from tweet {tweet_id} '
+                'message': f'{tweet_id} changed status by {request.user.username}'
             }
-            return Response(data, status=status.HTTP_201_CREATED)
+            return Response(data, status=status.HTTP_200_OK)
         else:
             data = {
-                'message': f'tweet {tweet_id} got like from {request.user.username}'
+                'message': f'tweet {tweet_id} got status from {request.user.username}'
             }
             return Response(data, status=status.HTTP_201_CREATED)
 
-
-class PostTweetDisLike(APIView):
-    def get(self, request, tweet_id):
-        tweet = get_object_or_404(Tweet, id=tweet_id)
-        try:
-            dislike = DislikeTweet.objects.create(tweet=tweet, user=request.user)
-
-        except IntegrityError:
-            DislikeTweet.objects.get(tweet=tweet, user=request.user).delete()
-            data = {
-                'message': f'{request.user.username} take back his dislike from tweet {tweet_id} '
-            }
-            return Response(data, status=status.HTTP_201_CREATED)
-        else:
-            data = {
-                'message': f'tweet {tweet_id} got dislike from {request.user.username}'
-            }
-            return Response(data, status=status.HTTP_201_CREATED)
+#
+# class PostTweetDisLike(APIView):
+#     def get(self, request, tweet_id):
+#         tweet = get_object_or_404(Tweet, id=tweet_id)
+#         try:
+#             dislike = DislikeTweet.objects.create(tweet=tweet, user=request.user)
+#
+#         except IntegrityError:
+#             dislike = DislikeTweet.objects.get(tweet=tweet, user=request.user)
+#             dislike.delete()
+#             data = {
+#                 'message': f'{request.user.username} take back his dislike from tweet {tweet_id} '
+#             }
+#             return Response(data, status=status.HTTP_201_CREATED)
+#         else:
+#             data = {
+#                 'message': f'tweet {tweet_id} got dislike from {request.user.username}'
+#             }
+#             return Response(data, status=status.HTTP_201_CREATED)
 
 
 class PostCommentLike(RetrieveUpdateDestroyAPIView):
@@ -115,7 +118,8 @@ class PostCommentLike(RetrieveUpdateDestroyAPIView):
             like = LikeComment.objects.create(comment=comment, user=request.user)
 
         except IntegrityError:
-            LikeComment.objects.get(comment=comment, user=request.user).delete()
+            like = LikeComment.objects.get(comment=comment, user=request.user)
+            like.delete()
             data = {
                 'message': f'{request.user.username} take back his like from comment {pk} '
             }
@@ -136,7 +140,8 @@ class PostCommentDisLike(RetrieveUpdateDestroyAPIView):
             dislike = DislikeComment.objects.create(comment=comment, user=request.user)
 
         except IntegrityError:
-            DislikeComment.objects.get(comment=comment, user=request.user).delete()
+            dislike = DislikeComment.objects.get(comment=comment, user=request.user)
+            dislike.delete()
             data = {
                 'message': f'{request.user.username} take back his dislike from comment {pk} '
             }
