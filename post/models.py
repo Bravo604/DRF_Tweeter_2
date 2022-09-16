@@ -26,7 +26,7 @@ class Tweet(Post):
     text = models.CharField(max_length=140)
 
     def get_status(self):
-        like_dislike = LikeDislikeTweet.objects.filter(tweet=self).values('status__status_name'). \
+        like_dislike = LikeDislikeTweet.objects.filter(tweet=self, status__isnull=False).values('status__status_name'). \
             annotate(count=Count('status'))
         statuses = {}
         for i in like_dislike:
@@ -58,7 +58,7 @@ class TweetStatus(models.Model):
 class LikeDislikeTweet(models.Model):
     tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.ForeignKey(TweetStatus, on_delete=models.CASCADE)
+    status = models.ForeignKey(TweetStatus, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         unique_together = ('user', 'tweet')

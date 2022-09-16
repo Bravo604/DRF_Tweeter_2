@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
-from .models import User
+from .models import User, UserProfile
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -26,3 +26,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = '__all__'

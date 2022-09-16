@@ -66,7 +66,10 @@ class PostTweetLike(APIView):
             like_dislike = LikeDislikeTweet.objects.create(tweet=tweet, user=request.user, status=tweet_status)
         except IntegrityError:
             like_dislike = LikeDislikeTweet.objects.get(tweet=tweet, user=request.user)
-            like_dislike.status = tweet_status
+            if like_dislike.status == tweet_status:
+                like_dislike.status = None
+            else:
+                like_dislike.status = tweet_status
             like_dislike.save()
             data = {
                 'message': f'{tweet_id} changed status by {request.user.username}'
